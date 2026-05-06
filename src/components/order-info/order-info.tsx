@@ -1,24 +1,36 @@
-import { FC, useMemo } from 'react';
+import { FC, useEffect, useState } from 'react';
+import { useParams, useLocation } from 'react-router-dom';
+
+import { TIngredient, TOrder } from '@utils-types';
+import { getOrderByNumberApi } from '@api';
 import { Preloader } from '../ui/preloader';
 import { OrderInfoUI } from '../ui/order-info';
-import { TIngredient } from '@utils-types';
+import { useSelector } from '../../services/store';
+import { getIngredients } from '../../services/slices/ingredientsSlice';
 
 export const OrderInfo: FC = () => {
-  /** TODO: взять переменные orderData и ingredients из стора */
-  const orderData = {
-    createdAt: '',
-    ingredients: [],
-    _id: '',
-    status: '',
-    name: '',
-    updatedAt: 'string',
-    number: 0
-  };
+  const { number } = useParams<{ number: string }>();
+  const location = useLocation();
+  const ingredients = useSelector(getIngredients);
 
-  const ingredients: TIngredient[] = [];
+  const [orderData, setOrderData] = useState<TOrder | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  /* Готовим данные для отображения */
-  const orderInfo = useMemo(() => {
+  useEffect(() => {
+    if (number) {
+      setLoading(true);
+      getOrderByNumberApi(Number(number))
+        .then((res) => {
+          if (res.orders && res.orders.length > 0) {
+            setOrderData(res.orders[0]);
+          }
+        })
+        .catch((err) => console.error(err))
+        .finally(() => setLoading(false));
+    }
+  }, [number]);
+
+  const orderInfo = (() => {
     if (!orderData || !ingredients.length) return null;
 
     const date = new Date(orderData.createdAt);
@@ -43,7 +55,7 @@ export const OrderInfo: FC = () => {
 
         return acc;
       },
-      {}
+      {} as TIngredientsWithCount
     );
 
     const total = Object.values(ingredientsInfo).reduce(
@@ -57,9 +69,9 @@ export const OrderInfo: FC = () => {
       date,
       total
     };
-  }, [orderData, ingredients]);
+  })();
 
-  if (!orderInfo) {
+  if (loading || !orderInfo) {
     return <Preloader />;
   }
 
