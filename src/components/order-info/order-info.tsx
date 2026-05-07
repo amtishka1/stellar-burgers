@@ -1,36 +1,31 @@
-import { FC, useEffect, useState } from 'react';
-import { useParams, useLocation } from 'react-router-dom';
+import { FC, useEffect, useMemo } from 'react';
+import { useParams } from 'react-router-dom';
 
-import { TIngredient, TOrder } from '@utils-types';
-import { getOrderByNumberApi } from '@api';
+import { TIngredient } from '@utils-types';
 import { Preloader } from '../ui/preloader';
 import { OrderInfoUI } from '../ui/order-info';
-import { useSelector } from '../../services/store';
+import { useDispatch, useSelector } from '../../services/store';
 import { getIngredients } from '../../services/slices/ingredientsSlice';
+import {
+  fetchOrder,
+  getCurrentOrder,
+  getProfileOrdersLoading
+} from '../../services/slices/ordersSlice';
 
 export const OrderInfo: FC = () => {
   const { number } = useParams<{ number: string }>();
-  const location = useLocation();
+  const dispatch = useDispatch();
   const ingredients = useSelector(getIngredients);
-
-  const [orderData, setOrderData] = useState<TOrder | null>(null);
-  const [loading, setLoading] = useState(true);
+  const orderData = useSelector(getCurrentOrder);
+  const loading = useSelector(getProfileOrdersLoading);
 
   useEffect(() => {
     if (number) {
-      setLoading(true);
-      getOrderByNumberApi(Number(number))
-        .then((res) => {
-          if (res.orders && res.orders.length > 0) {
-            setOrderData(res.orders[0]);
-          }
-        })
-        .catch((err) => console.error(err))
-        .finally(() => setLoading(false));
+      dispatch(fetchOrder(Number(number)));
     }
-  }, [number]);
+  }, [number, dispatch]);
 
-  const orderInfo = (() => {
+  const orderInfo = useMemo(() => {
     if (!orderData || !ingredients.length) return null;
 
     const date = new Date(orderData.createdAt);
@@ -69,7 +64,7 @@ export const OrderInfo: FC = () => {
       date,
       total
     };
-  })();
+  }, [orderData, ingredients]);
 
   if (loading || !orderInfo) {
     return <Preloader />;

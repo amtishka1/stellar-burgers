@@ -9,15 +9,10 @@ export {
   orderBurger
 } from '../slices/constructorSlice';
 
-export {
-  registerUser,
-  loginUser,
-  logoutUser,
-  setUser
-} from '../slices/authSlice';
+export { registerUser, loginUser, logoutUser } from '../slices/authSlice';
 
-export { fetchUser, updateUser } from '../slices/userSlice';
+export { fetchUser, updateUser, setUser, clearUser } from '../slices/userSlice';
 
 export { fetchFeeds } from '../slices/feedSlice';
 
-export { fetchOrders } from '../slices/ordersSlice';
+export { fetchOrders, fetchOrder } from '../slices/ordersSlice';

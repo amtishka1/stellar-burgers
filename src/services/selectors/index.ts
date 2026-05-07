@@ -13,7 +13,6 @@ export {
 
 export {
   getIsAuthenticated,
-  getUser,
   getAuthLoading,
   getAuthError
 } from '../slices/authSlice';
@@ -31,5 +30,6 @@ export {
 export {
   getProfileOrders,
   getProfileOrdersLoading,
-  getProfileOrdersError
+  getProfileOrdersError,
+  getCurrentOrder
 } from '../slices/ordersSlice';

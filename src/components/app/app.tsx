@@ -1,5 +1,11 @@
 import { useEffect } from 'react';
-import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
+import {
+  Routes,
+  Route,
+  useLocation,
+  useNavigate,
+  useParams
+} from 'react-router-dom';
 
 import {
   ConstructorPage,
@@ -22,6 +28,31 @@ import { getIsAuthenticated } from '../../services/slices/authSlice';
 
 import '../../index.css';
 import styles from './app.module.css';
+
+const OrderModal = () => {
+  const { number } = useParams();
+  const navigate = useNavigate();
+
+  return (
+    <Modal title={`#${number}`} onClose={() => navigate(-1)}>
+      <OrderInfo />
+    </Modal>
+  );
+};
+
+const OrderPage = () => <OrderInfo />;
+
+const IngredientPage = () => {
+  const navigate = useNavigate();
+  return (
+    <div className={styles.page}>
+      <button onClick={() => navigate(-1)} className={styles.backButton}>
+        Назад
+      </button>
+      <IngredientDetails />
+    </div>
+  );
+};
 
 const App = () => {
   const dispatch = useDispatch();
@@ -48,6 +79,8 @@ const App = () => {
         <Routes location={backgroundLocation || location}>
           <Route path='/' element={<ConstructorPage />} />
           <Route path='/feed' element={<Feed />} />
+          <Route path='/feed/:number' element={<OrderPage />} />
+          <Route path='/ingredients/:id' element={<IngredientPage />} />
           <Route
             path='/login'
             element={
@@ -96,20 +129,21 @@ const App = () => {
               </ProtectedRoute>
             }
           />
+          <Route
+            path='/profile/orders/:number'
+            element={
+              <ProtectedRoute>
+                <OrderPage />
+              </ProtectedRoute>
+            }
+          />
           <Route path='*' element={<NotFound404 />} />
         </Routes>
       )}
 
       {backgroundLocation && (
         <Routes>
-          <Route
-            path='/feed/:number'
-            element={
-              <Modal title='Детали заказа' onClose={() => navigate(-1)}>
-                <OrderInfo />
-              </Modal>
-            }
-          />
+          <Route path='/feed/:number' element={<OrderModal />} />
           <Route
             path='/ingredients/:id'
             element={
@@ -122,9 +156,7 @@ const App = () => {
             path='/profile/orders/:number'
             element={
               <ProtectedRoute>
-                <Modal title='Детали заказа' onClose={() => navigate(-1)}>
-                  <OrderInfo />
-                </Modal>
+                <OrderModal />
               </ProtectedRoute>
             }
           />
