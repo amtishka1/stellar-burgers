@@ -42,6 +42,10 @@ export const Profile: FC = () => {
     if (formValue.password) updateData.password = formValue.password;
 
     dispatch(updateUser(updateData));
+    setFormValue((prevState) => ({
+      ...prevState,
+      password: ''
+    }));
   };
 
   const handleCancel = (e: SyntheticEvent) => {
