@@ -1,85 +1,100 @@
-import { test, expect, Page } from '@playwright/test';
+import { test, expect, Page, Locator } from '@playwright/test';
 import { mockBun, mockMain, mockSauce, mockOrder } from './mockData';
 
-const BASE_URL = 'http://localhost:4000';
+const constructorSection = (page: Page): Locator =>
+  page.locator('section').filter({ hasText: 'Оформить заказ' });
+
+const modal = (page: Page): Locator => page.locator('#modals');
 
 test.describe('Burger Constructor Page', () => {
   test.beforeEach(async ({ page }) => {
     await page.routeFromHAR('tests/hars/ingredients.har', {
       url: '**/api/ingredients'
     });
-    await page.goto(BASE_URL);
+    await page.goto('/');
     await page.waitForLoadState('networkidle');
   });
 
   test.describe('Adding ingredients to constructor', () => {
     test('should add bun ingredient to constructor', async ({ page }) => {
-      const addButtons = page.getByRole('button', { name: 'Добавить' });
-      await addButtons.first().click();
+      await page
+        .getByTestId(`ingredient-${mockBun._id}`)
+        .getByRole('button', { name: 'Добавить' })
+        .click();
 
-      await expect(page.getByText(`${mockBun.name} (верх)`)).toBeVisible();
-      await expect(page.getByText(`${mockBun.name} (низ)`)).toBeVisible();
+      await expect(
+        constructorSection(page).getByText(`${mockBun.name} (верх)`)
+      ).toBeVisible();
+      await expect(
+        constructorSection(page).getByText(`${mockBun.name} (низ)`)
+      ).toBeVisible();
     });
 
     test('should add main ingredient to constructor', async ({ page }) => {
-      const addButtons = page.getByRole('button', { name: 'Добавить' });
-      await addButtons.nth(1).click();
+      await page
+        .getByTestId(`ingredient-${mockMain._id}`)
+        .getByRole('button', { name: 'Добавить' })
+        .click();
 
-      await expect(page.getByText(mockMain.name).first()).toBeVisible();
+      await expect(
+        constructorSection(page).getByText(mockMain.name)
+      ).toBeVisible();
     });
 
     test('should add sauce ingredient to constructor', async ({ page }) => {
-      const addButtons = page.getByRole('button', { name: 'Добавить' });
-      await addButtons.nth(2).click();
+      await page
+        .getByTestId(`ingredient-${mockSauce._id}`)
+        .getByRole('button', { name: 'Добавить' })
+        .click();
 
-      await expect(page.getByText(mockSauce.name).first()).toBeVisible();
+      await expect(
+        constructorSection(page).getByText(mockSauce.name)
+      ).toBeVisible();
     });
   });
 
   test.describe('Ingredient modal', () => {
     test('should open modal on ingredient click', async ({ page }) => {
-      const ingredientLink = page
-        .locator('a')
-        .filter({ hasText: mockBun.name });
-      await ingredientLink.first().click();
+      await page
+        .getByTestId(`ingredient-${mockBun._id}`)
+        .getByRole('link')
+        .click();
 
-      await expect(page.getByText('Детали ингредиента')).toBeVisible();
+      await expect(modal(page).getByText('Детали ингредиента')).toBeVisible();
       await expect(
-        page.getByRole('heading', { name: mockBun.name })
+        modal(page).getByRole('heading', { name: mockBun.name })
       ).toBeVisible();
     });
 
     test('should close modal by clicking close button', async ({ page }) => {
       await page
-        .locator('a')
-        .filter({ hasText: mockBun.name })
-        .first()
+        .getByTestId(`ingredient-${mockBun._id}`)
+        .getByRole('link')
         .click();
-      await expect(page.getByText('Детали ингредиента')).toBeVisible();
+      await expect(modal(page).getByText('Детали ингредиента')).toBeVisible();
 
       await page
         .locator('#modals button')
         .filter({ has: page.locator('svg') })
         .click();
       await expect(
-        page.getByText('Детали ингредиента')
+        modal(page).getByText('Детали ингредиента')
       ).not.toBeVisible();
     });
 
     test('should close modal by clicking overlay', async ({ page }) => {
       await page
-        .locator('a')
-        .filter({ hasText: mockSauce.name })
-        .first()
+        .getByTestId(`ingredient-${mockSauce._id}`)
+        .getByRole('link')
         .click();
-      await expect(page.getByText('Детали ингредиента')).toBeVisible();
+      await expect(modal(page).getByText('Детали ингредиента')).toBeVisible();
 
       await page
         .locator('#modals > div')
         .last()
         .click({ position: { x: 10, y: 10 } });
       await expect(
-        page.getByText('Детали ингредиента')
+        modal(page).getByText('Детали ингредиента')
       ).not.toBeVisible();
     });
 
@@ -87,15 +102,16 @@ test.describe('Burger Constructor Page', () => {
       page
     }) => {
       await page
-        .locator('a')
-        .filter({ hasText: mockSauce.name })
-        .first()
+        .getByTestId(`ingredient-${mockSauce._id}`)
+        .getByRole('link')
         .click();
 
       await expect(
-        page.getByRole('heading', { name: mockSauce.name })
+        modal(page).getByRole('heading', { name: mockSauce.name })
       ).toBeVisible();
-      await expect(page.getByText(String(mockSauce.price))).toBeVisible();
+      await expect(
+        modal(page).getByText(String(mockSauce.calories)).first()
+      ).toBeVisible();
     });
   });
 
@@ -128,14 +144,19 @@ test.describe('Burger Constructor Page', () => {
     test('should create order and show order number then close modal', async ({
       page
     }) => {
-      const addButtons = page.getByRole('button', { name: 'Добавить' });
-      await addButtons.first().click();
-      await addButtons.nth(1).click();
+      await page
+        .getByTestId(`ingredient-${mockBun._id}`)
+        .getByRole('button', { name: 'Добавить' })
+        .click();
+      await page
+        .getByTestId(`ingredient-${mockMain._id}`)
+        .getByRole('button', { name: 'Добавить' })
+        .click();
 
       await page.getByText('Оформить заказ').click();
 
       await expect(
-        page.getByText(String(mockOrder.number))
+        modal(page).getByText(String(mockOrder.number))
       ).toBeVisible();
 
       await page
@@ -143,19 +164,24 @@ test.describe('Burger Constructor Page', () => {
         .filter({ has: page.locator('svg') })
         .click();
       await expect(
-        page.getByText(String(mockOrder.number))
+        modal(page).getByText(String(mockOrder.number))
       ).not.toBeVisible();
     });
 
     test('should clear constructor after order', async ({ page }) => {
-      const addButtons = page.getByRole('button', { name: 'Добавить' });
-      await addButtons.first().click();
-      await addButtons.nth(1).click();
+      await page
+        .getByTestId(`ingredient-${mockBun._id}`)
+        .getByRole('button', { name: 'Добавить' })
+        .click();
+      await page
+        .getByTestId(`ingredient-${mockMain._id}`)
+        .getByRole('button', { name: 'Добавить' })
+        .click();
 
       await page.getByText('Оформить заказ').click();
 
       await expect(
-        page.getByText(String(mockOrder.number))
+        modal(page).getByText(String(mockOrder.number))
       ).toBeVisible();
 
       await page
@@ -163,8 +189,12 @@ test.describe('Burger Constructor Page', () => {
         .filter({ has: page.locator('svg') })
         .click();
 
-      await expect(page.getByText('Выберите булки').first()).toBeVisible();
-      await expect(page.getByText('Выберите начинку')).toBeVisible();
+      await expect(
+        constructorSection(page).getByText('Выберите булки').first()
+      ).toBeVisible();
+      await expect(
+        constructorSection(page).getByText('Выберите начинку')
+      ).toBeVisible();
     });
   });
 });
